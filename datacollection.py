@@ -31,10 +31,9 @@ def main():
         chan_list = []
         for i in range(20):
             sample,timestamp = inlet.pull_sample()
-            chan_list.append(sample)
+            chan_list.append(sample[:60]) # Cut off data at 60 Hz
         sampleLst.append(chan_list)
         samples_collected+=1
-
     playsound('assets/eventually.mp3')
 
     sampleLst = np.asarray(sampleLst)
