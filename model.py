@@ -3,7 +3,7 @@ from random import shuffle
 import numpy as np
 import os
 
-ONEHOTS = {'TBD': [], 'TBD': [],'TBD': [], 'TBD': []}
+ONEHOTS = {'game': [1,0,0], 'read': [0,1,0],'meditate': [0,0,1]}
 SPLIT = .9
 
 def main():
@@ -12,10 +12,10 @@ def main():
     for file in os.listdir('data'):
         arr = np.load('data/' + str(file))
         data_type = str(file)[0:str(file).find('-')] # Slice the filename to just extract the data type
-        labeled_data.append(arr,ONEHOTS[data_type]) # Add the data with its appropriate one-hot encoding to the list
+        for sample in arr:
+            labeled_data.append([sample,ONEHOTS[data_type]]) # Add the data with its appropriate one-hot encoding to the list
 
     shuffle(labeled_data)
-
     samples = []
     labels = []
     for sample, label in labeled_data:
@@ -28,8 +28,8 @@ def main():
     train_labels = np.asarray(labels[:cutoff])
     test_labels = np.asarray(labels[cutoff:])
 
-
     print(str(len(labeled_data)/5) + ' seconds of data found.')
+    print(train_data.shape)
 
     #I'm gonna try using a convolutional structure here, I'm not sure how this is gonna play with the interaction between channel pulls however. Iterative design
     model = tf.keras.models.Sequential([
@@ -37,22 +37,22 @@ def main():
         tf.keras.layers.MaxPooling1D(),
         tf.keras.layers.Conv1D(filters=32,kernel_size=3),
         tf.keras.layers.MaxPooling1D(),
-        tf.keras.layers.FLatten(),
+        tf.keras.layers.Flatten(),
         tf.keras.layers.Dense(512,activation='relu'),
         tf.keras.layers.Dropout(.2),
-        tf.keras.layers.Dense(4, activation='softmax')
+        tf.keras.layers.Dense(3, activation='softmax')
     ])
-    model.compile(optimizer='sgd',loss='categorical_crossentropy',metrics=['accuracy'])
-    print(model.summary())
+    model.compile(optimizer='adam',loss='categorical_crossentropy',metrics=['accuracy'])
+    # print(model.summary())
     #Maybe play around with adding some callbacks, but I don't think this is complex enough to need them. TODO?
     model.fit(x = train_data, y = train_labels, validation_data = (test_data,test_labels), epochs = 15)
 
     print('Example prediction: ')
     print(train_labels[0])
-    print(model.predict(train_data[0]))
+    print(model.predict(np.asarray(train_data[0]).reshape((1,20,60))))
 
     print('Save model?')
-    tosave = str(input).lower()
+    tosave = str(input()).lower()
     if tosave == 'y':
         name = str(input('Input name:'))
         model.save('models/' + name + '.h5')
